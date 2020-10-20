@@ -1,7 +1,7 @@
 //! A crate that provides a map that can be used in `no_std` environments.
 
-#![allow(incomplete_features)]
-#![feature(const_generics)]
+#![feature(min_const_generics)]
+#![no_std]
 #![warn(clippy::all)]
 #![warn(missing_docs)]
 
@@ -11,7 +11,7 @@ use core::fmt::Formatter;
 use core::fmt::Result as FmtResult;
 
 /// A map that has a predetermined set of keys.
-pub struct ConstMap<const N: usize, K, V>
+pub struct ConstMap<K, V, const N: usize>
 where
     K: Eq,
 {
@@ -19,7 +19,7 @@ where
     values: [V; N],
 }
 
-impl<const N: usize, K, V> ConstMap<N, K, V>
+impl<K, V, const N: usize> ConstMap<K, V, N>
 where
     K: Eq,
 {
@@ -72,7 +72,7 @@ where
     }
 }
 
-impl<const N: usize, K, V> Debug for ConstMap<N, K, V>
+impl<K, V, const N: usize> Debug for ConstMap<K, V, N>
 where
     K: Eq + Debug,
     V: Debug,
