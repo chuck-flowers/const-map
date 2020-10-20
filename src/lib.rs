@@ -5,6 +5,11 @@
 #![warn(clippy::all)]
 #![warn(missing_docs)]
 
+use core::borrow::Borrow;
+use core::fmt::Debug;
+use core::fmt::Formatter;
+use core::fmt::Result as FmtResult;
+
 /// A map that has a predetermined set of keys.
 pub struct ConstMap<const N: usize, K, V>
 where
@@ -35,22 +40,51 @@ where
     }
 
     /// Tries to get a references to the value for a provided key.
-    pub fn get(&self, key: &K) -> Option<&V> {
+    pub fn get<Q>(&self, key: &Q) -> Option<&V>
+    where
+        K: Borrow<Q>,
+        Q: Eq + ?Sized,
+    {
         let i = self.get_index(key)?;
         Some(&self.values[i])
     }
 
     /// Tries to get a mutable reference to the value for a provided key.
-    pub fn get_mut(&mut self, key: &K) -> Option<&mut V> {
+    pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut V>
+    where
+        K: Borrow<Q>,
+        Q: Eq + ?Sized,
+    {
         let i = self.get_index(key)?;
         Some(&mut self.values[i])
     }
 
-    fn get_index(&self, key: &K) -> Option<usize> {
-        self.keys
-            .iter()
+    fn get_index<Q>(&self, key: &Q) -> Option<usize>
+    where
+        K: Borrow<Q>,
+        Q: Eq + ?Sized,
+    {
+        let keys_as_qs = self.keys.iter().map(<K as Borrow<Q>>::borrow);
+        keys_as_qs
             .enumerate()
-            .find(|(_, b)| K::eq(*b, key))
+            .find(|(_, b)| Q::eq(*b.borrow(), key))
             .map(|(i, _)| i)
+    }
+}
+
+impl<const N: usize, K, V> Debug for ConstMap<N, K, V>
+where
+    K: Eq + Debug,
+    V: Debug,
+{
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        let mut map_builder = f.debug_map();
+        for i in 0..N {
+            let key = &self.keys[i];
+            let value = &self.values[i];
+            map_builder.entry(key, value);
+        }
+
+        map_builder.finish()
     }
 }
